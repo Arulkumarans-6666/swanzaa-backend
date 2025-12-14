@@ -18,23 +18,28 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-// 🔥 FIXED CORS FOR WEB + MOBILE
+// ✅ CORS – WORKS FOR WEB + ANDROID (Capacitor)
 app.use(cors({
-  origin: true,          // ✅ allow ALL origins (capacitor, browser)
+  origin: true, // allow all (browser + capacitor://localhost)
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
-// 🔥 VERY IMPORTANT (preflight fix)
-app.options("*", cors());
+// ✅ PRE-FLIGHT FIX (NO '*')
+app.use((req, res, next) => {
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
+});
 
 // DB
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
   .catch(err => console.error("Mongo connect error", err));
 
-// Routes
+// ROUTES
 app.use("/api/users", usersRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/admins", adminRoutes);
@@ -45,4 +50,6 @@ app.use("/api/leaderboard", leaderboardRouter);
 app.use("/api/quotes", quotesRoute);
 
 const port = process.env.PORT || 5000;
-app.listen(port, () => console.log("Server running on port", port));
+app.listen(port, () =>
+  console.log("🚀 Server running on port", port)
+);
