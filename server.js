@@ -1,9 +1,9 @@
+// backend/server.js
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import mongoose from "mongoose";
 
-// Routes
 import studentQuizRoutes from "./routes/studentQuiz.js";
 import usersRoute from "./routes/users.js";
 import authRoute from "./routes/auth.js";
@@ -16,41 +16,25 @@ import quotesRoute from "./routes/quotes.js";
 dotenv.config();
 
 const app = express();
-
-/* ======================
-   MIDDLEWARE
-====================== */
-
 app.use(express.json());
 
-// ✅ CORS — FIXED (NO * OPTIONS)
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:3000",
-      "capacitor://localhost",   // ANDROID
-      "https://swanzaa-backend.onrender.com"
-    ],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    credentials: true,
-  })
-);
+// 🔥 FIXED CORS FOR WEB + MOBILE
+app.use(cors({
+  origin: true,          // ✅ allow ALL origins (capacitor, browser)
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
-/* ======================
-   DATABASE
-====================== */
+// 🔥 VERY IMPORTANT (preflight fix)
+app.options("*", cors());
 
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("✅ MongoDB connected"))
-  .catch((err) => console.error("❌ MongoDB error:", err));
+// DB
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.error("Mongo connect error", err));
 
-/* ======================
-   ROUTES
-====================== */
-
+// Routes
 app.use("/api/users", usersRoute);
 app.use("/api/auth", authRoute);
 app.use("/api/admins", adminRoutes);
@@ -60,11 +44,5 @@ app.use("/api/student-quiz", studentQuizRoutes);
 app.use("/api/leaderboard", leaderboardRouter);
 app.use("/api/quotes", quotesRoute);
 
-/* ======================
-   SERVER
-====================== */
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-});
+const port = process.env.PORT || 5000;
+app.listen(port, () => console.log("Server running on port", port));
