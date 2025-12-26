@@ -170,4 +170,40 @@ router.delete("/:id", auth, requireSuperAdmin, async (req, res) => {
   }
 });
 
+// CHANGE PASSWORD (logged in student)
+router.post("/change-password", auth, async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).json({ message: "All fields required" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
+    }
+
+    // Logged in student (from token)
+    const student = await Student.findById(req.user.userId);
+    if (!student) {
+      return res.status(404).json({ message: "Student not found" });
+    }
+
+    const match = await bcrypt.compare(currentPassword, student.password);
+    if (!match) {
+      return res.status(400).json({ message: "Current password incorrect" });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    student.password = hashed;
+    await student.save();
+
+    res.json({ message: "Password changed successfully" });
+
+  } catch (err) {
+    console.error("Student change password error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 export default router;
